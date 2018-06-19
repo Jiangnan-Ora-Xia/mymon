@@ -20,13 +20,13 @@ var SlaveStatusToSend = []string{
 func SlaveStatus(server *g.DBServer) ([]*models.MetaData, error) {
 	isSlave := models.NewMetric("Is_slave", server)
 
-	row, err := db.QueryFirst(g.Hostname(server), "SHOW SLAVE STATUS")
+	rows, err := db.QueryRows(g.Hostname(server), "SHOW SLAVE STATUS")
 	if err != nil {
 		return nil, err
 	}
 
 	// be master
-	if row == nil || 0 == len(row) {
+	if 0 == len(rows) || rows[0] == nil {
 		isSlave.SetValue(0)
 		return []*models.MetaData{isSlave}, nil
 	}
@@ -39,13 +39,16 @@ func SlaveStatus(server *g.DBServer) ([]*models.MetaData, error) {
 		data[i] = models.NewMetric(s, server)
 		switch s {
 		case "Slave_SQL_Running", "Slave_IO_Running":
-			data[i].SetValue(0)
-			v := fmt.Sprintf("%v", row[s])
-			if v == "Yes" {
-				data[i].SetValue(1)
+			data[i].SetValue(1)
+			for _, row := range rows {
+				v := fmt.Sprintf("%v", row[s])
+				if v != "Yes" {
+					data[i].SetValue(0)
+					break
+				}
 			}
 		default:
-			v, err := strconv.Atoi(fmt.Sprintf("%v", row[s]))
+			v, err := strconv.Atoi(fmt.Sprintf("%v", rows[0][s]))
 			if err != nil {
 				data[i].SetValue(-1)
 			} else {

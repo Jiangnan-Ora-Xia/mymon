@@ -58,6 +58,8 @@ func MysqlAlive(server *g.DBServer, ok bool) {
 	data := models.NewMetric("mysql_alive_local", server)
 	if ok {
 		data.SetValue(1)
+	} else {
+		data.SetValue(0)
 	}
 	msg, err := sendData([]*models.MetaData{data})
 	if err != nil {
@@ -79,10 +81,13 @@ func sendData(data []*models.MetaData) ([]byte, error) {
 		logger.Debug("%s", m)
 	}
 
+	logger.Info("sending data to falcon agent ...")
 	res, err := http.Post(strUrl, "Content-Type: application/json", bytes.NewBuffer(bs))
 	if err != nil {
+		logger.Errorln(err)
 		return nil, err
 	}
+	logger.Info("send data to falcon agent done")
 
 	defer res.Body.Close()
 	return ioutil.ReadAll(res.Body)
