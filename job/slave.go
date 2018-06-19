@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	log "github.com/toolkits/logger"
+	log "github.com/cihub/seelog"
 
 	"github.com/coraldane/mymon/db"
 	"github.com/coraldane/mymon/g"
@@ -22,7 +22,7 @@ var SlaveStatusToSend = []string{
 
 func SlaveStatus(server *g.DBServer) ([]*models.MetaData, error) {
 	isSlave := models.NewMetric("Is_slave", server)
-	dbalias := g.Hostname(server) + fmt.Sprint(server.Port)
+	dbalias := g.Hostname(server.Endpoint) + fmt.Sprint(server.Port)
 	log.Debug(dbalias)
 	rows, err := db.QueryRows(dbalias, "SHOW SLAVE STATUS")
 	if err != nil {

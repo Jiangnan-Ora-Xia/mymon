@@ -8,12 +8,19 @@ import (
 	"github.com/coraldane/mymon/cron"
 	"github.com/coraldane/mymon/db"
 	"github.com/coraldane/mymon/g"
-	"github.com/toolkits/logger"
-	"log"
+	log "github.com/cihub/seelog"
 	"os"
 )
 
 func main() {
+	defer log.Flush()
+	logger, err := log.LoggerFromConfigAsFile("log.xml")
+	if err != nil {
+		log.Critical("err parsing config log file", err)
+		return
+	}
+	log.ReplaceLogger(logger)
+
 	cfg := flag.String("c", "cfg.json", "configuration file")
 	version := flag.Bool("v", false, "show version")
 	flag.Parse()
@@ -24,14 +31,12 @@ func main() {
 	}
 
 	if err := g.ParseConfig(*cfg); err != nil {
-		log.Fatalln(err)
+		log.Error(err)
+		log.Flush()
+		os.Exit(0)
 	}
 
-	logger.SetLevelWithDefault(g.Config().LogLevel, "info")
 	go db.InitDatabase()
-	for _, server := range g.Config().DBServerList {
-		go cron.Heartbeat(server)
-	}
-
+        go cron.Heartbeat()
 	select {}
 }

@@ -18,7 +18,7 @@ func GlobalVariables(server *g.DBServer) ([]*models.MetaData, error) {
 }
 
 func mysqlState(server *g.DBServer, sql string) ([]*models.MetaData, error) {
-        dbalias := g.Hostname(server)+fmt.Sprint(server.Port)
+        dbalias := g.Hostname(server.Endpoint)+fmt.Sprint(server.Port)
 	rows, err := db.QueryRows(dbalias, sql)
 	if err != nil {
 		return nil, err

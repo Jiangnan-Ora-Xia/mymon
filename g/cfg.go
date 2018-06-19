@@ -3,8 +3,8 @@ package g
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/cihub/seelog"
 	"github.com/toolkits/file"
-	"log"
 	"sync"
 )
 
@@ -16,18 +16,24 @@ type DBServer struct {
 	Passwd   string `json:"passwd"`
 }
 
+type Monitor_Account struct {
+	User   string `json:"user"`
+	Passwd string `json:"passwd"`
+}
+
 func (this *DBServer) String() string {
 	return fmt.Sprintf("<Endpoint: %s, Host: %s, Port: %d, User: %s, Passwd: %s>",
-		this.Endpoint, this.Host, this.Port, this.User, this.Passwd)
+		this.Endpoint, this.Host, this.Port, this.User, "******")
 }
 
 type GlobalConfig struct {
-	LogLevel       string      `json:"log_level"`
-	Interval       int         `json:"interval"`
-	MaxIdle        int         `json:"max_idle"`
-	ConnectTimeout int         `json:"connect_timeout"`
-	FalconClient   string      `json:"falcon_client"`
-	DBServerList   []*DBServer `json:"db_server_list"`
+	LogLevel                string           `json:"log_level"`
+	Interval                int              `json:"interval"`
+	MaxIdle                 int              `json:"max_idle"`
+	ConnectTimeout          int              `json:"connect_timeout"`
+	FalconClient            string           `json:"falcon_client"`
+	DBServerList            []*DBServer      `json:"db_server_list"`
+	Default_Monitor_Account *Monitor_Account `json:"defult_monitor_account"`
 }
 
 var (
@@ -66,6 +72,6 @@ func ParseConfig(cfg string) error {
 
 	config = &c
 
-	log.Println("read config file:", cfg, "successfully")
+	log.Info("read config file:", cfg, "----successfully")
 	return nil
 }

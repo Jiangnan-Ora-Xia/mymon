@@ -1,0 +1,9 @@
+<seelog type="asynctimer" asyncinterval="5000000" minlevel="debug" maxlevel="error">
+	<outputs formatid="format1">
+        <rollingfile type="date" filename="var/app.log" datepattern="02.01.2006"  maxrolls="31"/>
+    </outputs>
+    <formats>
+        <format id="format1" format="%Date %Time [%LEVEL] [%File:%Line] %Msg%n"/>
+    </formats>
+</seelog>
+

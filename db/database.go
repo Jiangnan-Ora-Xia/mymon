@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/astaxie/beego/orm"
+	log "github.com/cihub/seelog"
 	"github.com/coraldane/mymon/g"
-	"github.com/toolkits/logger"
 
 	_ "github.com/go-sql-driver/mysql"
 	"time"
@@ -21,22 +21,49 @@ func InitDatabase() {
 	if g.Config().LogLevel == "debug" {
 		orm.Debug = true
 	}
-
+	defaultDb := false
 	maxIdle := g.Config().MaxIdle
 	t := time.NewTicker(time.Duration(time.Second * 60)).C
 	for {
-		defaultDb := false
+		//auto discovery local db
+		ports, err := g.MysqlPorts()
+		if err != nil {
+			log.Error(err)
+		}
+		for _, port := range ports {
+			exist := false
+			for _, server := range g.Config().DBServerList {
+				if port == server.Port && server.Host == "127.0.0.1" {
+					exist = true
+				}
+			}
+			if !exist {
+				discover_db := g.DBServer{
+					Endpoint: g.Hostname(""),
+					Host:     "127.0.0.1",
+					Port:     port,
+					User:     g.Config().Default_Monitor_Account.User,
+					Passwd:   g.Config().Default_Monitor_Account.Passwd,
+				}
+				g.Config().DBServerList = append(g.Config().DBServerList, &discover_db)
+				log.Info("auto discover local db port:", port)
+			}
+		}
 		for _, server := range g.Config().DBServerList {
 			dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/?loc=Local&parseTime=true",
 				server.User, server.Passwd, server.Host, server.Port)
-			fmt.Println(dsn)
 			if defaultDb || orm.RegisterDataBase("default", "mysql", dsn, maxIdle, maxIdle) == nil {
 				defaultDb = true
 			}
 
-			alias := g.Hostname(server) + fmt.Sprint(server.Port)
-			orm.RegisterDataBase(alias, "mysql", dsn, maxIdle, maxIdle)
+			alias := g.Hostname(server.Endpoint) + fmt.Sprint(server.Port)
+			_, err = orm.GetDB(alias)
+			if err != nil {
+				orm.RegisterDataBase(alias, "mysql", dsn, maxIdle, maxIdle)
+			}
+			log.Info(server.String())
 		}
+
 		<-t
 	}
 
@@ -66,7 +93,7 @@ func QueryFirst(alias, strSql string, args ...interface{}) (orm.Params, error) {
 	}
 	num, err := ormer.Raw(strSql, args...).Values(&maps)
 	if nil != err {
-		logger.Errorln(num, err)
+		log.Error(num, err)
 		return nil, err
 	}
 	if num > 0 {
@@ -84,7 +111,7 @@ func QueryRows(alias, strSql string, args ...interface{}) ([]orm.Params, error) 
 	num, err := ormer.Raw(strSql, args...).Values(&maps)
 
 	if nil != err {
-		logger.Errorln(num, err)
+		log.Error(num, err)
 		return nil, err
 	}
 	return maps, err

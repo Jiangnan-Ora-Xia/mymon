@@ -12,7 +12,7 @@ import (
 )
 
 func InnodbStatus(server *g.DBServer) ([]*models.MetaData, error) {
-	dbalias := g.Hostname(server)+fmt.Sprint(server.Port)
+	dbalias := g.Hostname(server.Endpoint)+fmt.Sprint(server.Port)
 	rowMap, err := db.QueryFirst(dbalias, "SHOW /*!50000 ENGINE */ INNODB STATUS")
 	if err != nil {
 		return nil, err

@@ -256,7 +256,7 @@ func (m *MetaData) SetValue(v interface{}) {
 func NewMetric(name string, server *g.DBServer) *MetaData {
 	return &MetaData{
 		Metric:      name,
-		Endpoint:    g.Hostname(server),
+		Endpoint:    g.Hostname(server.Endpoint),
 		CounterType: dataType(name),
 		Tags:        fmt.Sprintf("port=%d", server.Port),
 		Timestamp:   time.Now().Unix(),

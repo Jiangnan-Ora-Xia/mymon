@@ -3,10 +3,10 @@ package cron
 import (
 	"bytes"
 	"encoding/json"
+	log "github.com/cihub/seelog"
 	"github.com/coraldane/mymon/g"
 	"github.com/coraldane/mymon/job"
 	"github.com/coraldane/mymon/models"
-	"github.com/toolkits/logger"
 	"io/ioutil"
 	"net/http"
 )
@@ -15,38 +15,41 @@ func FetchData(server *g.DBServer) (err error) {
 	data := make([]*models.MetaData, 0)
 	defer func() {
 		MysqlAlive(server, err == nil)
+		if err != nil {
+			log.Error(err)
+		}
 		msg, err := sendData(data)
 		if err != nil {
-			logger.Errorln("sendData error", err)
+			log.Error("sendData error", err)
 			return
 		}
-		logger.Info("Send response %s: %s", server.String(), string(msg))
+		log.Info("Send response %s: %s", server.String(), string(msg))
 	}()
 
 	globalStatus, err := job.GlobalStatus(server)
 	if err != nil {
-		logger.Errorln("get GlobalStatus error", err)
+		log.Error("get GlobalStatus error", err)
 		return
 	}
 	data = append(data, globalStatus...)
 
 	globalVars, err := job.GlobalVariables(server)
 	if err != nil {
-		logger.Errorln("get GlobalVariables error", err)
+		log.Error("get GlobalVariables error", err)
 		return
 	}
 	data = append(data, globalVars...)
 
 	innodbState, err := job.InnodbStatus(server)
 	if err != nil {
-		logger.Errorln("get InnodbStatus error", err)
+		log.Error("get InnodbStatus error", err)
 		return
 	}
 	data = append(data, innodbState...)
 
 	slaveState, err := job.SlaveStatus(server)
 	if err != nil {
-		logger.Errorln("get SlaveStatus error", err)
+		log.Error("get SlaveStatus error", err)
 		return
 	}
 	data = append(data, slaveState...)
@@ -62,10 +65,10 @@ func MysqlAlive(server *g.DBServer, ok bool) {
 	}
 	msg, err := sendData([]*models.MetaData{data})
 	if err != nil {
-		logger.Error("Send alive data failed: %v", err)
+		log.Error("Send alive data failed: %v", err)
 		return
 	}
-	logger.Info("Alive data response %s: %s", server.String(), string(msg))
+	log.Info("Alive data response %s: %s", server.String(), string(msg))
 }
 
 func sendData(data []*models.MetaData) ([]byte, error) {
@@ -75,18 +78,18 @@ func sendData(data []*models.MetaData) ([]byte, error) {
 	}
 
 	strUrl := g.Config().FalconClient
-	logger.Debug("Send to %s, size: %d", strUrl, len(data))
+	log.Debug("Send to %s, size: %d", strUrl, len(data))
 	for _, m := range data {
-		logger.Debug("%s", m)
+		log.Debug("%s", m)
 	}
 
-	logger.Info("sending data to falcon agent ...")
+	log.Info("sending data to falcon agent ...")
 	res, err := http.Post(strUrl, "Content-Type: application/json", bytes.NewBuffer(bs))
 	if err != nil {
-		logger.Errorln(err)
+		log.Error(err)
 		return nil, err
 	}
-	logger.Info("send data to falcon agent done")
+	log.Info("send data to falcon agent done")
 
 	defer res.Body.Close()
 	return ioutil.ReadAll(res.Body)
