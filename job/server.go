@@ -2,10 +2,11 @@ package job
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/coraldane/mymon/db"
 	"github.com/coraldane/mymon/g"
 	"github.com/coraldane/mymon/models"
-	"strconv"
 )
 
 func GlobalStatus(server *g.DBServer) ([]*models.MetaData, error) {
@@ -17,7 +18,8 @@ func GlobalVariables(server *g.DBServer) ([]*models.MetaData, error) {
 }
 
 func mysqlState(server *g.DBServer, sql string) ([]*models.MetaData, error) {
-	rows, err := db.QueryRows(g.Hostname(server), sql)
+        dbalias := g.Hostname(server)+fmt.Sprint(server.Port)
+	rows, err := db.QueryRows(dbalias, sql)
 	if err != nil {
 		return nil, err
 	}

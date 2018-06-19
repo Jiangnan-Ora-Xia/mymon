@@ -12,11 +12,17 @@ import (
 )
 
 func FetchData(server *g.DBServer) (err error) {
+	data := make([]*models.MetaData, 0)
 	defer func() {
 		MysqlAlive(server, err == nil)
+		msg, err := sendData(data)
+		if err != nil {
+			logger.Errorln("sendData error", err)
+			return
+		}
+		logger.Info("Send response %s: %s", server.String(), string(msg))
 	}()
 
-	data := make([]*models.MetaData, 0)
 	globalStatus, err := job.GlobalStatus(server)
 	if err != nil {
 		logger.Errorln("get GlobalStatus error", err)
@@ -44,13 +50,6 @@ func FetchData(server *g.DBServer) (err error) {
 		return
 	}
 	data = append(data, slaveState...)
-
-	msg, err := sendData(data)
-	if err != nil {
-		logger.Errorln("sendData error", err)
-		return
-	}
-	logger.Info("Send response %s: %s", server.String(), string(msg))
 	return
 }
 

@@ -2,10 +2,13 @@ package job
 
 import (
 	"fmt"
+	"strconv"
+
+	log "github.com/toolkits/logger"
+
 	"github.com/coraldane/mymon/db"
 	"github.com/coraldane/mymon/g"
 	"github.com/coraldane/mymon/models"
-	"strconv"
 )
 
 var SlaveStatusToSend = []string{
@@ -19,8 +22,9 @@ var SlaveStatusToSend = []string{
 
 func SlaveStatus(server *g.DBServer) ([]*models.MetaData, error) {
 	isSlave := models.NewMetric("Is_slave", server)
-
-	rows, err := db.QueryRows(g.Hostname(server), "SHOW SLAVE STATUS")
+	dbalias := g.Hostname(server) + fmt.Sprint(server.Port)
+	log.Debug(dbalias)
+	rows, err := db.QueryRows(dbalias, "SHOW SLAVE STATUS")
 	if err != nil {
 		return nil, err
 	}

@@ -28,7 +28,7 @@ func main() {
 	}
 
 	logger.SetLevelWithDefault(g.Config().LogLevel, "info")
-	db.InitDatabase()
+	go db.InitDatabase()
 	for _, server := range g.Config().DBServerList {
 		go cron.Heartbeat(server)
 	}
